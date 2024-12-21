@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ConfessionForm } from "@/components/ConfessionForm";
 import { ConfessionCard } from "@/components/ConfessionCard";
 import { Button } from "@/components/ui/button";
-import { Clock, ThumbsUp, LogOut } from "lucide-react";
+import { Clock, ThumbsUp } from "lucide-react";
 import { AuthForm } from "@/components/AuthForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -54,24 +54,6 @@ const Confessions = () => {
 
   const handleSort = (type: "recent" | "likes") => {
     setSortBy(type);
-  };
-
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast({
-        title: "Logged out",
-        description: "You've been successfully logged out.",
-      });
-    } catch (error) {
-      console.error("Error logging out:", error);
-      toast({
-        title: "Error",
-        description: "Failed to log out. Please try again.",
-        variant: "destructive",
-      });
-    }
   };
 
   if (isLoading) {
