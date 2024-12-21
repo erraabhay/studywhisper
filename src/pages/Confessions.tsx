@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { ConfessionForm } from "@/components/ConfessionForm";
 import { ConfessionCard } from "@/components/ConfessionCard";
 import { Button } from "@/components/ui/button";
-import { Clock, ThumbsUp } from "lucide-react";
+import { Clock, ThumbsUp, LogOut } from "lucide-react";
 import { AuthForm } from "@/components/AuthForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "react-hot-toast";
 
 const fetchConfessions = async () => {
   console.log("Fetching confessions");
@@ -55,6 +56,24 @@ const Confessions = () => {
     setSortBy(type);
   };
 
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast({
+        title: "Logged out",
+        description: "You've been successfully logged out.",
+      });
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-study-paper p-4 md:p-8">
@@ -66,9 +85,21 @@ const Confessions = () => {
   return (
     <div className="min-h-screen bg-study-paper p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-study-navy mb-8 text-center">
-          Campus Confessions
-        </h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-study-navy text-center">
+            Campus Confessions
+          </h1>
+          {session && (
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </Button>
+          )}
+        </div>
 
         {session ? (
           <ConfessionForm />
