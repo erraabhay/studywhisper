@@ -1,50 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ConfessionForm } from "@/components/ConfessionForm";
 import { ConfessionCard } from "@/components/ConfessionCard";
 import { Button } from "@/components/ui/button";
 import { Clock, ThumbsUp } from "lucide-react";
+import { AuthForm } from "@/components/AuthForm";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
-// Mock data for initial development
-const mockConfessions = [
-  {
-    id: "1",
-    content: "I've been pretending to understand calculus all semester...",
-    likes: 42,
-    timestamp: "2 hours ago",
-    category: "Funny",
-  },
-  {
-    id: "2",
-    content: "Sometimes I go to the library just to take a nap between classes.",
-    likes: 28,
-    timestamp: "4 hours ago",
-    category: "Rant",
-  },
-  {
-    id: "3",
-    content: "I actually enjoy writing research papers. Is that weird?",
-    likes: 15,
-    timestamp: "6 hours ago",
-    category: "Question",
-  },
-];
+const fetchConfessions = async () => {
+  console.log("Fetching confessions");
+  const { data, error } = await supabase
+    .from("confessions")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data;
+};
 
 const Confessions = () => {
   const [sortBy, setSortBy] = useState<"recent" | "likes">("recent");
-  const [confessions, setConfessions] = useState(mockConfessions);
+  const [session, setSession] = useState(null);
+
+  const { data: confessions = [], isLoading } = useQuery({
+    queryKey: ["confessions"],
+    queryFn: fetchConfessions,
+  });
+
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      console.log("Auth state changed:", session?.user?.email);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const sortedConfessions = [...confessions].sort((a, b) => {
+    if (sortBy === "likes") {
+      return (b.likes || 0) - (a.likes || 0);
+    }
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   const handleSort = (type: "recent" | "likes") => {
     setSortBy(type);
-    const sorted = [...confessions].sort((a, b) => {
-      if (type === "likes") {
-        return b.likes - a.likes;
-      }
-      // For simplicity, we're using the mock data order for "recent"
-      return mockConfessions.findIndex((c) => c.id === a.id) -
-        mockConfessions.findIndex((c) => c.id === b.id);
-    });
-    setConfessions(sorted);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-study-paper p-4 md:p-8">
+        <div className="max-w-4xl mx-auto text-center">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-study-paper p-4 md:p-8">
@@ -52,9 +69,15 @@ const Confessions = () => {
         <h1 className="text-3xl font-bold text-study-navy mb-8 text-center">
           Campus Confessions
         </h1>
-        
-        <ConfessionForm />
-        
+
+        {session ? (
+          <ConfessionForm />
+        ) : (
+          <div className="mb-8">
+            <AuthForm />
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 mb-4">
           <Button
             variant={sortBy === "recent" ? "default" : "outline"}
@@ -75,8 +98,14 @@ const Confessions = () => {
         </div>
 
         <div className="space-y-4">
-          {confessions.map((confession) => (
-            <ConfessionCard key={confession.id} confession={confession} />
+          {sortedConfessions.map((confession) => (
+            <ConfessionCard
+              key={confession.id}
+              confession={{
+                ...confession,
+                timestamp: new Date(confession.created_at).toLocaleString(),
+              }}
+            />
           ))}
         </div>
       </div>
