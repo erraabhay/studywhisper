@@ -11,11 +11,22 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const categories = ["Funny", "Serious", "Rant", "Question", "Other"];
+const yearCategories = ["1st year", "2nd year", "3rd year", "4th year"];
+const branchCategories = [
+  "CSE",
+  "CSN",
+  "CSO",
+  "CSM",
+  "ECE",
+  "EEE",
+  "ECI",
+  "MEC",
+];
 
 export const ConfessionForm = () => {
   const [confession, setConfession] = useState("");
-  const [category, setCategory] = useState("");
+  const [year, setYear] = useState("");
+  const [branch, setBranch] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -24,9 +35,10 @@ export const ConfessionForm = () => {
     if (!confession.trim()) return;
 
     setLoading(true);
-    console.log("Submitting confession:", { confession, category });
+    console.log("Submitting confession:", { confession, year, branch });
 
     try {
+      const category = `${year}${branch ? ` | ${branch}` : ""}`;
       const { error } = await supabase.from("confessions").insert([
         {
           content: confession.trim(),
@@ -41,7 +53,8 @@ export const ConfessionForm = () => {
         description: "Your confession has been posted anonymously.",
       });
       setConfession("");
-      setCategory("");
+      setYear("");
+      setBranch("");
     } catch (error) {
       console.error("Error submitting confession:", error);
       toast({
@@ -64,19 +77,27 @@ export const ConfessionForm = () => {
           className="min-h-[120px] bg-white"
           disabled={loading}
         />
-        <div className="flex gap-4">
-          <Select
-            value={category}
-            onValueChange={setCategory}
-            disabled={loading}
-          >
+        <div className="flex gap-4 flex-wrap">
+          <Select value={year} onValueChange={setYear} disabled={loading}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select category" />
+              <SelectValue placeholder="Select year" />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat.toLowerCase()}>
-                  {cat}
+              {yearCategories.map((year) => (
+                <SelectItem key={year} value={year.toLowerCase()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={branch} onValueChange={setBranch} disabled={loading}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select branch" />
+            </SelectTrigger>
+            <SelectContent>
+              {branchCategories.map((branch) => (
+                <SelectItem key={branch} value={branch}>
+                  {branch}
                 </SelectItem>
               ))}
             </SelectContent>

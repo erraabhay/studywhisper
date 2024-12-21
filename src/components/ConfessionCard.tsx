@@ -27,15 +27,22 @@ export const ConfessionCard = ({ confession }: ConfessionCardProps) => {
     setLiked(!liked);
   };
 
+  const categories = confession.category?.split(" | ") || [];
+
   return (
     <Card className="w-full p-6 mb-4 bg-white shadow-sm hover:shadow-md transition-shadow animate-fade-up">
       <div className="flex justify-between items-start mb-4">
         <div>
-          {confession.category && (
-            <span className="inline-block bg-study-beige text-study-navy text-sm px-3 py-1 rounded-full mb-2">
-              {confession.category}
-            </span>
-          )}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {categories.map((category, index) => (
+              <span
+                key={index}
+                className="inline-block bg-study-beige text-study-navy text-sm px-3 py-1 rounded-full"
+              >
+                {category}
+              </span>
+            ))}
+          </div>
           <p className="text-study-slate text-lg">{confession.content}</p>
         </div>
       </div>
